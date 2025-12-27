@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍽️ Restaurante Deluxe | Menú Digital</title>
+    
+    <!-- ESTILOS EXTERNOS -->
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- METADATOS PARA TRADUCCIÓN -->
+    <meta name="description" content="Menú digital interactivo del Restaurante Deluxe">
+    <meta name="keywords" content="restaurante, menú digital, pedidos, comida, delivery">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER PROFESIONAL -->
+        <header class="header">
+            <div class="header-content">
+                <div class="restaurant-info">
+                    <h1 class="restaurant-title" data-i18n="restaurant.title">
+                        <i class="fas fa-utensils"></i>
+                        RESTAURANTE DELUXE
+                    </h1>
+                    <p class="restaurant-subtitle" data-i18n="restaurant.subtitle">
+                        Experiencia gastronómica premium • Menú digital interactivo
+                    </p>
+                    <div class="restaurant-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            <span data-i18n="open.hours">Abierto: 11:00 AM - 11:00 PM</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-phone"></i>
+                            <span data-i18n="reservations">Reservas: (123) 456-7890</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span data-i18n="address">Dirección: Av. Gourmet 123</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema"></div>
+                    <select class="language-selector" id="languageSelect" title="Seleccionar idioma">
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="en">🇺🇸 English</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- INFO MESA -->
+        <div class="table-info" id="tableInfo">
+            <div class="table-number" id="tableNumber" data-i18n="table.number">MESA 01</div>
+            <p style="margin-bottom: 15px; opacity: 0.9;" data-i18n="table.scan">
+                Escanea el código QR o introduce el número de mesa
+            </p>
+            <div class="table-status">
+                <i class="fas fa-check-circle"></i>
+                <span data-i18n="table.ready">LISTA PARA ORDENAR</span>
+            </div>
+            <div style="margin-top: 20px; font-size: 0.9rem;">
+                <i class="fas fa-qrcode"></i>
+                <span data-i18n="table.qr">Código QR:</span>
+                <span id="qrCode" style="font-family: monospace;">DELUXE-01</span>
+            </div>
+        </div>
+
+        <!-- FILTROS CATEGORÍAS -->
+        <div class="categories-filter" id="categoriesFilter">
+            <!-- Se generará dinámicamente -->
+        </div>
+
+        <!-- PRODUCTOS -->
+        <div class="products-grid" id="productsGrid">
+            <!-- Se generará dinámicamente -->
+        </div>
+
+        <!-- CARRITO FLOTANTE -->
+        <div class="cart-float">
+            <button class="cart-button" onclick="openCart()" title="Ver carrito">
+                <i class="fas fa-shopping-cart"></i>
+                <div class="cart-count" id="cartCount">0</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL CARRITO -->
+    <div class="modal-overlay" id="cartModal" onclick="closeCartOnOverlay(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="cart.title">
+                    <i class="fas fa-receipt"></i> Tu Orden Actual
+                </h2>
+                <button class="close-modal" onclick="closeCart()" title="Cerrar">
+                    &times;
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-info" style="margin: 0 0 25px 0; padding: 20px;">
+                    <div class="table-number" id="cartTableNumber">MESA 01</div>
+                    <div class="table-status">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span data-i18n="cart.active">PEDIDO ACTIVO</span>
+                    </div>
+                </div>
+
+                <!-- ITEMS DEL CARRITO -->
+                <div id="cartItems">
+                    <div class="cart-empty">
+                        <i class="fas fa-shopping-basket"></i>
+                        <h3 style="margin-bottom: 10px;" data-i18n="cart.empty.title">
+                            Tu carrito está vacío
+                        </h3>
+                        <p data-i18n="cart.empty.message">
+                            Agrega productos desde el menú para comenzar
+                        </p>
+                    </div>
+                </div>
+
+                <!-- RESUMEN -->
+                <div class="cart-summary" id="cartSummary" style="display: none;">
+                    <div class="cart-total">
+                        <span class="total-label" data-i18n="cart.total">Total a pagar:</span>
+                        <span class="total-amount" id="cartTotalAmount">$0.00</span>
+                    </div>
+                    <div class="cart-actions">
+                        <button class="btn-secondary" onclick="clearCart()" data-i18n="cart.clear">
+                            <i class="fas fa-trash"></i> Vaciar
+                        </button>
+                        <button class="btn-primary" onclick="confirmOrder()" id="confirmOrderBtn" data-i18n="cart.confirm">
+                            <i class="fas fa-paper-plane"></i> Enviar Pedido
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SEGUIMIENTO -->
+                <div class="order-tracking" id="orderTracking">
+                    <div class="tracking-header">
+                        <h3 data-i18n="tracking.title">
+                            <i class="fas fa-shipping-fast"></i> Seguimiento de Pedido
+                        </h3>
+                        <p data-i18n="tracking.subtitle">Tu pedido está en proceso</p>
+                    </div>
+                    <div class="tracking-steps" id="trackingSteps">
+                        <!-- Se genera dinámicamente -->
+                    </div>
+                    <div class="order-id">
+                        <span data-i18n="tracking.orderId">ID de Pedido:</span>
+                        <strong id="orderIdDisplay">---</strong>
+                    </div>
+                </div>
+
+                <!-- FACTURA -->
+                <div class="invoice" id="invoice">
+                    <div class="invoice-header">
+                        <i class="fas fa-check-circle"></i>
+                        <h2 data-i18n="invoice.title">¡Pedido Completado!</h2>
+                        <p data-i18n="invoice.subtitle">Gracias por tu preferencia</p>
+                    </div>
+                    <div class="invoice-details">
+                        <div class="detail-group">
+                            <div class="detail-label" data-i18n="invoice.table">Mesa</div>
+                            <div class="detail-value" id="invoiceTable">---</div>
+                        </div>
+                        <div class="detail-group">
+                            <div class="detail-label" data-i18n="invoice.orderId">ID Pedido</div>
+                            <div class="detail-value" id="invoiceOrderId">---</div>
+                        </div>
+                        <div class="detail-group">
+                            <div class="detail-label" data-i18n="invoice.time">Hora</div>
+                            <div class="detail-value" id="invoiceTime">---</div>
+                        </div>
+                        <div class="detail-group">
+                            <div class="detail-label" data-i18n="invoice.code">Código</div>
+                            <div class="detail-value" id="invoiceCode">---</div>
+                        </div>
+                    </div>
+                    <div class="invoice-items" id="invoiceItems">
+                        <!-- Items de la factura -->
+                    </div>
+                    <div class="invoice-total">
+                        <span class="total-label-invoice" data-i18n="invoice.total">TOTAL</span>
+                        <span class="total-amount-invoice" id="invoiceTotal">$0.00</span>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px; padding: 15px; background: #FFF8E1; border-radius: 10px; border-left: 4px solid var(--warning);">
+                        <p style="color: #F57C00; font-weight: 600; margin-bottom: 10px;" data-i18n="invoice.thanks">
+                            <span>⭐</span> ¡Esperamos verte pronto!
+                        </p>
+                        <p style="color: #666; font-size: 0.9rem;" data-i18n="invoice.satisfaction">
+                            Tu satisfacción es nuestra prioridad
+                        </p>
+                    </div>
+
+                    <button class="btn-primary" onclick="newOrder()" style="margin-top: 30px; width: 100%;" data-i18n="invoice.newOrder">
+                        <i class="fas fa-plus"></i> Nuevo Pedido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT EXTERNO -->
+    <script src="js/menu.js"></script>
+</body>
+</html>

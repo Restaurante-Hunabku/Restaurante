@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Panel de Control - Restaurante Deluxe</title>
+    
+    <!-- ESTILOS EXTERNOS -->
+    <link rel="stylesheet" href="css/panel.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    
+    <!-- METADATOS -->
+    <meta name="description" content="Panel de control profesional para gestión de restaurante">
+    <meta name="keywords" content="panel, dashboard, restaurante, gestión, pedidos">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <span>Restaurante Deluxe</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3 class="section-title">Principal</h3>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="#dashboard" class="nav-link active">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#orders" class="nav-link">
+                                <i class="fas fa-receipt"></i>
+                                <span>Pedidos Activos</span>
+                                <span class="nav-badge" id="ordersBadge">12</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#tables" class="nav-link">
+                                <i class="fas fa-chair"></i>
+                                <span>Mesas</span>
+                                <span class="nav-badge" id="tablesBadge">8/20</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#menu" class="nav-link">
+                                <i class="fas fa-book-open"></i>
+                                <span>Menú</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3 class="section-title">Gestión</h3>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="#inventory" class="nav-link">
+                                <i class="fas fa-boxes"></i>
+                                <span>Inventario</span>
+                                <span class="nav-badge" id="inventoryBadge">3</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#reservations" class="nav-link">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Reservas</span>
+                                <span class="nav-badge" id="reservationsBadge">5</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#employees" class="nav-link">
+                                <i class="fas fa-users"></i>
+                                <span>Personal</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#reports" class="nav-link">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Reportes</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3 class="section-title">Configuración</h3>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="#settings" class="nav-link">
+                                <i class="fas fa-cog"></i>
+                                <span>Ajustes</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#qr" class="nav-link">
+                                <i class="fas fa-qrcode"></i>
+                                <span>Códigos QR</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#notifications" class="nav-link">
+                                <i class="fas fa-bell"></i>
+                                <span>Notificaciones</span>
+                                <span class="nav-badge" id="notificationsBadge">7</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">AD</div>
+                    <div class="user-details">
+                        <h4>Administrador</h4>
+                        <span>admin@deluxe.com</span>
+                    </div>
+                    <a href="#logout" style="margin-left: auto; color: var(--gray-400);" title="Cerrar sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
+            <!-- HEADER SUPERIOR -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle" title="Menú">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title">Dashboard</h1>
+                </div>
+
+                <div class="header-right">
+                    <div class="header-actions">
+                        <button class="action-btn" title="Actualizar" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="action-btn" title="Notificaciones" id="notificationsBtn">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge"></span>
+                        </button>
+                        <button class="action-btn" title="Ayuda" id="helpBtn">
+                            <i class="fas fa-question-circle"></i>
+                        </button>
+                    </div>
+
+                    <div class="user-menu" id="userMenu" title="Menú de usuario">
+                        <div class="user-menu-avatar">AD</div>
+                        <div class="user-menu-info">
+                            <span style="font-weight: 500;">Administrador</span>
+                            <i class="fas fa-chevron-down" style="font-size: 0.875rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENIDO -->
+            <div class="content-wrapper">
+                <!-- ESTADÍSTICAS RÁPIDAS -->
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Se generará dinámicamente -->
+                </div>
+
+                <!-- GRÁFICOS -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Ventas Diarias</h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn active" data-period="today">Hoy</button>
+                                <button class="chart-btn" data-period="week">Semana</button>
+                                <button class="chart-btn" data-period="month">Mes</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Top Productos</h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn active" data-type="quantity">Cantidad</button>
+                                <button class="chart-btn" data-type="revenue">Ingresos</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="productsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PEDIDOS ACTIVOS -->
+                <section class="orders-section">
+                    <div class="section-header">
+                        <h2>Pedidos Activos</h2>
+                        <div class="section-actions">
+                            <div class="filter-btn-group">
+                                <button class="filter-btn active" data-filter="all">Todos</button>
+                                <button class="filter-btn" data-filter="pending">Pendientes</button>
+                                <button class="filter-btn" data-filter="preparing">Preparando</button>
+                                <button class="filter-btn" data-filter="ready">Listos</button>
+                                <button class="filter-btn" data-filter="delivered">Entregados</button>
+                            </div>
+                            <button class="btn-primary" id="newOrderBtn">
+                                <i class="fas fa-plus"></i> Nuevo Pedido
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="orders-table" id="ordersTable">
+                            <thead>
+                                <tr>
+                                    <th>ID Pedido</th>
+                                    <th>Mesa</th>
+                                    <th>Productos</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Tiempo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <!-- Se generará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- MESAS DISPONIBLES -->
+                <section class="orders-section">
+                    <div class="section-header">
+                        <h2>Estado de Mesas</h2>
+                        <div class="section-actions">
+                            <button class="btn-primary" id="refreshTablesBtn">
+                                <i class="fas fa-sync-alt"></i> Actualizar
+                            </button>
+                            <button class="btn-secondary" id="viewAllTablesBtn">
+                                <i class="fas fa-expand"></i> Ver Todas
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tables-grid" id="tablesGrid">
+                        <!-- Se generará dinámicamente -->
+                    </div>
+                </section>
+
+                <!-- INVENTARIO BAJO -->
+                <section class="orders-section" id="lowInventorySection" style="display: none;">
+                    <div class="section-header">
+                        <h2><i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i> Inventario Bajo</h2>
+                        <div class="section-actions">
+                            <button class="btn-warning" id="orderSuppliesBtn">
+                                <i class="fas fa-truck"></i> Ordenar Suministros
+                            </button>
+                        </div>
+                    </div>
+                    <div id="inventoryItems">
+                        <!-- Se generará dinámicamente -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DETALLE PEDIDO -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Detalle del Pedido</h3>
+                <button class="modal-close" id="modalClose" title="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modalCancel">Cancelar</button>
+                <button class="btn-primary" id="modalAction">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO PEDIDO -->
+    <div class="modal-overlay" id="newOrderModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Nuevo Pedido Manual</h3>
+                <button class="modal-close" id="newOrderModalClose" title="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body" id="newOrderModalBody">
+                <div style="display: grid; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Mesa</label>
+                        <select id="selectTable" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                            <option value="">Seleccionar mesa...</option>
+                            <!-- Se llenará dinámicamente -->
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Productos</label>
+                        <div style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; max-height: 200px; overflow-y: auto;" id="newOrderProducts">
+                            <!-- Lista de productos -->
+                        </div>
+                    </div>
+                    <div id="newOrderSummary" style="display: none;">
+                        <h4 style="margin-bottom: 1rem;">Resumen</h4>
+                        <div id="newOrderItems"></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border);">
+                            <strong>Total:</strong>
+                            <strong id="newOrderTotal">$0.00</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelNewOrder">Cancelar</button>
+                <button class="btn-primary" id="createNewOrder">Crear Pedido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- JAVASCRIPT EXTERNO -->
+    <script src="js/panel.js"></script>
+</body>
+</html>
