@@ -6,7 +6,7 @@
 // CONFIGURACIÓN DEL SISTEMA
 // ============================================
 const PANEL_CONFIG = {
-    GOOGLE_SHEETS_URL: 'https://script.google.com/macros/s/AKfycbw7ksv3FiG9KkojMJU1LE-GUEXIJsDAqzaX0QCTM67srSi_uPE5bXx_gMfVpJYYbKw-/exec?action=test',
+    GOOGLE_SHEETS_URL: 'https://script.google.com/macros/s/AKfycbw7ksv3FiG9KkojMJU1LE-GUEXIJsDAqzaX0QCTM67srSi_uPE5bXx_gMfVpJYYbKw-/exec',
     UPDATE_INTERVAL: 15000, // 15 segundos
     NOTIFICATION_TIMEOUT: 5000,
     MAX_TABLES: 20,
