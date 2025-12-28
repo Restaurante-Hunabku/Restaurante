@@ -341,5 +341,45 @@
     
     <!-- JAVASCRIPT EXTERNO -->
     <script src="js/panel.js"></script>
+    <script>
+// Funciones para el sidebar
+document.addEventListener('DOMContentLoaded', function() {
+    // Navegación del sidebar
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remover activo de todos
+            navLinks.forEach(l => l.classList.remove('active'));
+            
+            // Agregar activo al actual
+            this.classList.add('active');
+            
+            // Cambiar título de página
+            const pageTitle = document.querySelector('.page-title');
+            const sectionName = this.querySelector('span').textContent;
+            if (pageTitle) {
+                pageTitle.textContent = sectionName;
+            }
+            
+            // Aquí podrías cargar contenido dinámico según la sección
+            console.log('Navegando a:', sectionName);
+        });
+    });
+    
+    // Botón de logout
+    const logoutBtn = document.querySelector('a[href="#logout"]');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('¿Cerrar sesión?')) {
+                showNotification('Sesión cerrada', 'info');
+                // Aquí iría la lógica real de logout
+            }
+        });
+    }
+});
+</script>
 </body>
 </html>
