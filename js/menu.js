@@ -826,3 +826,80 @@ window.closeCartOnOverlay = closeCartOnOverlay;
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', initialize);
+// Agrega esta función al final de menu.js
+async function checkOrderStatus(orderId) {
+    try {
+        const url = `${CONFIG.GOOGLE_SHEETS_URL}?action=getActiveOrders&_=${Date.now()}`;
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.orders) {
+                const order = data.orders.find(o => o.ID === orderId);
+                if (order) {
+                    return order.Estado || 'pending';
+                }
+            }
+        }
+        return 'pending';
+    } catch (error) {
+        console.error('Error checkOrderStatus:', error);
+        return 'pending';
+    }
+}
+
+// Actualizar la función simulateOrderProgress para usar estado REAL
+function simulateOrderProgress(orderId) {
+    // Verificar estado actual
+    checkOrderStatus(orderId).then(status => {
+        console.log('Estado inicial del pedido:', status);
+        
+        // Mapear estados a pasos
+        const statusToStep = {
+            'pending': 0,
+            'preparing': 1,
+            'ready': 2,
+            'delivered': 3
+        };
+        
+        let currentStep = statusToStep[status] || 0;
+        
+        // Actualizar pasos según estado actual
+        updateTrackingSteps(currentStep);
+        
+        // Verificar estado periódicamente
+        const checkInterval = setInterval(() => {
+            checkOrderStatus(orderId).then(newStatus => {
+                const newStep = statusToStep[newStatus] || 0;
+                
+                if (newStep > currentStep) {
+                    currentStep = newStep;
+                    updateTrackingSteps(currentStep);
+                    
+                    // Si está entregado, mostrar factura
+                    if (newStatus === 'delivered') {
+                        clearInterval(checkInterval);
+                        setTimeout(showInvoice, 2000);
+                    }
+                }
+            });
+        }, 5000); // Verificar cada 5 segundos
+    });
+}
+
+function updateTrackingSteps(currentStep) {
+    const steps = ['received', 'preparing', 'ready', 'delivered'];
+    
+    // Quitar activo de todos
+    document.querySelectorAll('.tracking-step').forEach(step => {
+        step.classList.remove('step-active');
+    });
+    
+    // Activar pasos hasta el actual
+    for (let i = 0; i <= currentStep; i++) {
+        const stepElement = document.getElementById(`step-${steps[i]}`);
+        if (stepElement) {
+            stepElement.classList.add('step-active');
+        }
+    }
+}
