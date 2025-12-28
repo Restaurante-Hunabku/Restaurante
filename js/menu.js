@@ -492,7 +492,8 @@ TOTAL: $${total.toFixed(2)}
             orderInProgress = true;
             
             // Mostrar seguimiento
-            showOrderTracking(response.orderId);
+            // Mostrar seguimiento
+initOrderTracking(response.orderId);
             showNotification(`¡Pedido #${response.orderId} enviado! Código: ${response.code}`, 'success');
             
             // LIMPIAR CARRITO DESPUÉS DE ENVIAR
@@ -605,7 +606,241 @@ async function sendToGoogleSheets(data) {
         };
     }
 }
+    // ============================================
+// FUNCIONES DE SEGUIMIENTO DE PEDIDOS
+// ============================================
+
+function initOrderTracking(orderId) {
+    console.log('🚀 Iniciando seguimiento para pedido:', orderId);
     
+    const tracking = document.getElementById('orderTracking');
+    const summary = document.getElementById('cartSummary');
+    
+    if (tracking) {
+        tracking.style.display = 'block';
+        document.getElementById('orderIdDisplay').textContent = orderId;
+        
+        // Crear pasos de seguimiento
+        const steps = [
+            { id: 'received', label: 'Recibido', icon: 'fas fa-clipboard-check' },
+            { id: 'preparing', label: 'Preparando', icon: 'fas fa-utensils' },
+            { id: 'ready', label: 'Listo', icon: 'fas fa-check-circle' },
+            { id: 'delivered', label: 'Entregado', icon: 'fas fa-concierge-bell' }
+        ];
+        
+        const container = document.getElementById('trackingSteps');
+        if (container) {
+            let html = '';
+            steps.forEach((step, index) => {
+                html += `
+                    <div class="tracking-step" id="step-${step.id}">
+                        <div class="step-icon">
+                            <i class="${step.icon}"></i>
+                        </div>
+                        <div class="step-label">${step.label}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+        
+        // Iniciar seguimiento
+        simulateOrderProgress(orderId);
+    }
+    
+    if (summary) {
+        summary.style.display = 'none';
+    }
+}
+async function startRealTimeTracking(orderId) {
+    console.log('📡 Iniciando seguimiento en tiempo real para:', orderId);
+    
+    // Primero verificar estado actual
+    const initialStatus = await getOrderStatus(orderId);
+    console.log('📊 Estado inicial:', initialStatus);
+    
+    // Actualizar pasos según estado
+    updateTrackingProgress(initialStatus);
+    
+    // Iniciar polling para actualizaciones
+    const pollingInterval = setInterval(async () => {
+        try {
+            const newStatus = await getOrderStatus(orderId);
+            console.log('🔄 Estado actual:', newStatus);
+            
+            if (newStatus !== initialStatus) {
+                console.log('✅ ¡Estado cambiado!');
+                updateTrackingProgress(newStatus);
+                
+                // Si está entregado, mostrar factura
+                if (newStatus === 'delivered') {
+                    clearInterval(pollingInterval);
+                    setTimeout(() => {
+                        document.getElementById('orderTracking').style.display = 'none';
+                        document.getElementById('invoice').style.display = 'block';
+                    }, 2000);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error en seguimiento:', error);
+        }
+    }, 5000); // Verificar cada 5 segundos
+    
+    // Detener después de 30 minutos
+    setTimeout(() => {
+        clearInterval(pollingInterval);
+        console.log('⏱️ Seguimiento detenido');
+    }, 1800000);
+}
+
+function showInvoice() {
+    if (!currentOrder) return;
+    
+    console.log('🧾 Mostrando factura para pedido:', currentOrder.id);
+    
+    // Ocultar seguimiento
+    const tracking = document.getElementById('orderTracking');
+    if (tracking) {
+        tracking.style.display = 'none';
+    }
+    
+    // Mostrar factura
+    const invoice = document.getElementById('invoice');
+    if (invoice) {
+        invoice.style.display = 'block';
+        
+        // Llenar datos
+        document.getElementById('invoiceTable').textContent = currentOrder.table;
+        document.getElementById('invoiceOrderId').textContent = currentOrder.id;
+        document.getElementById('invoiceTime').textContent = new Date(currentOrder.timestamp).toLocaleTimeString('es-MX', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        document.getElementById('invoiceCode').textContent = currentOrder.code;
+        document.getElementById('invoiceTotal').textContent = `$${currentOrder.total.toFixed(2)}`;
+        
+        // Items de la factura
+        let itemsHtml = '';
+        currentOrder.cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            itemsHtml += `
+                <div class="invoice-item">
+                    <div>${item.quantity}x ${item.name}</div>
+                    <div style="font-weight: 600;">$${itemTotal.toFixed(2)}</div>
+                </div>
+            `;
+        });
+        
+        // Agregar subtotales
+        itemsHtml += `
+            <div class="invoice-item" style="border-top: 2px solid var(--border); padding-top: 20px;">
+                <div>Subtotal</div>
+                <div>$${currentOrder.subtotal.toFixed(2)}</div>
+            </div>
+            <div class="invoice-item">
+                <div>IVA (${(CONFIG.TAX_RATE * 100)}%)</div>
+                <div>$${currentOrder.tax.toFixed(2)}</div>
+            </div>
+            <div class="invoice-item">
+                <div>Servicio (${(CONFIG.SERVICE_FEE * 100)}%)</div>
+                <div>$${currentOrder.service.toFixed(2)}</div>
+            </div>
+        `;
+        
+        document.getElementById('invoiceItems').innerHTML = itemsHtml;
+        
+        // Guardar en historial
+        saveOrderToHistory();
+    }
+}
+
+async function getOrderStatus(orderId) {
+    try {
+        const url = `${CONFIG.GOOGLE_SHEETS_URL}?action=getActiveOrders&_=${Date.now()}`;
+        console.log('📞 Consultando estado en:', url);
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('📦 Datos recibidos:', data);
+            
+            if (data.success && data.orders) {
+                const order = data.orders.find(o => o.ID === orderId);
+                if (order) {
+                    return order.Estado || 'pending';
+                } else {
+                    console.log('⚠️ Pedido no encontrado, verificado en historial...');
+                    // Si no está en activos, verificar si fue entregado
+                    return await checkIfOrderWasDelivered(orderId);
+                }
+            }
+        }
+        return 'pending';
+    } catch (error) {
+        console.error('❌ Error getOrderStatus:', error);
+        return 'pending';
+    }
+}
+
+async function checkIfOrderWasDelivered(orderId) {
+    try {
+        const url = `${CONFIG.GOOGLE_SHEETS_URL}?action=getAllOrders&_=${Date.now()}`;
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.orders) {
+                const order = data.orders.find(o => o.ID === orderId);
+                if (order && order.Estado === 'delivered') {
+                    return 'delivered';
+                }
+            }
+        }
+        return 'pending';
+    } catch (error) {
+        console.error('Error checkIfOrderWasDelivered:', error);
+        return 'pending';
+    }
+}
+
+function updateTrackingProgress(status) {
+    console.log('🎯 Actualizando progreso a:', status);
+    
+    // Mapear estado a paso
+    const statusMap = {
+        'pending': 0,
+        'preparing': 1,
+        'ready': 2,
+        'delivered': 3
+    };
+    
+    const currentStep = statusMap[status] || 0;
+    const steps = ['received', 'preparing', 'ready', 'delivered'];
+    
+    // Resetear todos los pasos
+    document.querySelectorAll('.tracking-step').forEach(step => {
+        step.classList.remove('step-active');
+    });
+    
+    // Activar pasos hasta el actual
+    for (let i = 0; i <= currentStep; i++) {
+        const stepElement = document.getElementById(`step-${steps[i]}`);
+        if (stepElement) {
+            stepElement.classList.add('step-active');
+            console.log(`✅ Paso activado: ${steps[i]}`);
+        }
+    }
+    
+    // Mostrar notificación según estado
+    if (status === 'preparing') {
+        showNotification('👨‍🍳 ¡Tu pedido está siendo preparado!', 'info');
+    } else if (status === 'ready') {
+        showNotification('✅ ¡Tu pedido está listo!', 'success');
+    } else if (status === 'delivered') {
+        showNotification('🎉 ¡Pedido entregado!', 'success');
+    }
+}
     // Animar pasos
     let currentStep = 0;
     const interval = setInterval(() => {
@@ -692,6 +927,8 @@ function showInvoice() {
 }
 
 function newOrder() {
+    console.log('🔄 Iniciando nuevo pedido...');
+    
     orderInProgress = false;
     currentOrder = null;
     
@@ -708,7 +945,7 @@ function newOrder() {
     }
     
     renderCartItems();
-    showNotification('Listo para nuevo pedido', 'success');
+    showNotification('✅ Listo para nuevo pedido', 'success');
 }
 
 // ============================================
@@ -821,6 +1058,8 @@ window.toggleTheme = toggleTheme;
 window.openCart = openCart;
 window.closeCart = closeCart;
 window.closeCartOnOverlay = closeCartOnOverlay;
+window.initOrderTracking = initOrderTracking;
+window.showInvoice = showInvoice;
 
 // ============================================
 // INICIALIZACIÓN
