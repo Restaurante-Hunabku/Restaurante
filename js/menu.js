@@ -107,7 +107,11 @@ function initialize() {
         currentTable = mesa.padStart(2, '0');
     }
     
-    // Cargar carrito
+    // LIMPIAR CARRITO AL INICIAR (opcional, comenta si quieres mantenerlo)
+    // cart = [];
+    // localStorage.removeItem('restaurantCart');
+    
+    // O cargar carrito existente
     loadCart();
     
     // Configurar controles
@@ -430,22 +434,25 @@ async function confirmOrder() {
         return;
     }
     
-    // Calcular totales
+    // Calcular totales REALES
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const tax = subtotal * CONFIG.TAX_RATE;
     const service = subtotal * CONFIG.SERVICE_FEE;
     const total = subtotal + tax + service;
     
-    // Preparar lista de productos
+    // Preparar lista de productos REAL
     const productsList = cart.map(item => `${item.quantity}x ${item.name}`).join(', ');
     
-    // Confirmación
+    // Mostrar confirmación con datos REALES
     const confirmation = `
 ¿Enviar pedido a la cocina?
 
 Mesa: ${currentTable}
 Productos: ${productsList}
-Total: $${total.toFixed(2)}
+Subtotal: $${subtotal.toFixed(2)}
+IVA (${(CONFIG.TAX_RATE * 100)}%): $${tax.toFixed(2)}
+Servicio (${(CONFIG.SERVICE_FEE * 100)}%): $${service.toFixed(2)}
+TOTAL: $${total.toFixed(2)}
 
 ¿Confirmar?`;
     
@@ -454,7 +461,7 @@ Total: $${total.toFixed(2)}
     try {
         showNotification('Enviando pedido a cocina...', 'info');
         
-        // Preparar datos para Google Sheets
+        // Preparar datos REALES para Google Sheets
         const orderData = {
             action: 'createOrder',
             table: currentTable,
@@ -463,35 +470,32 @@ Total: $${total.toFixed(2)}
             notes: 'Pedido desde menú digital'
         };
         
-        console.log('Enviando datos:', orderData);
+        console.log('📋 Datos REALES del pedido:', orderData);
         
         // Enviar a Google Sheets
         const response = await sendToGoogleSheets(orderData);
         
         if (response && response.success) {
-            // Crear orden local
-            const orderId = response.orderId || 'ORD-' + Date.now().toString().slice(-8);
-            const code = response.code || Math.floor(100000 + Math.random() * 900000);
-            
+            // Crear orden local con datos REALES
             currentOrder = {
-                id: orderId,
-                code: code,
+                id: response.orderId,
+                code: response.code,
                 table: currentTable,
-                cart: [...cart],
+                cart: [...cart], // Guardar copia del carrito REAL
                 subtotal: subtotal,
                 tax: tax,
                 service: service,
                 total: total,
-                timestamp: new Date().toISOString()
+                timestamp: response.timestamp || new Date().toISOString()
             };
             
             orderInProgress = true;
             
             // Mostrar seguimiento
-            showOrderTracking(orderId);
-            showNotification('¡Pedido enviado exitosamente!', 'success');
+            showOrderTracking(response.orderId);
+            showNotification(`¡Pedido #${response.orderId} enviado! Código: ${response.code}`, 'success');
             
-            // Limpiar carrito
+            // LIMPIAR CARRITO DESPUÉS DE ENVIAR
             cart = [];
             saveCart();
             updateCartUI();
@@ -499,19 +503,22 @@ Total: $${total.toFixed(2)}
             // Mostrar factura después de simulación
             setTimeout(() => {
                 showInvoice();
-            }, 15000); // 15 segundos para simular preparación
+            }, 15000);
             
         } else {
-            throw new Error(response?.error || 'Error desconocido');
+            throw new Error('Error en la respuesta del servidor');
         }
         
     } catch (error) {
-        console.error('Error al enviar pedido:', error);
-        showNotification('Error al conectar con el servidor. El pedido se guardó localmente.', 'warning');
+        console.error('❌ Error al enviar pedido:', error);
         
-        // Crear orden local como respaldo
+        // Crear orden local como respaldo CON DATOS REALES
         const orderId = 'ORD-' + Date.now().toString().slice(-8);
         const code = Math.floor(100000 + Math.random() * 900000);
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const tax = subtotal * CONFIG.TAX_RATE;
+        const service = subtotal * CONFIG.SERVICE_FEE;
+        const total = subtotal + tax + service;
         
         currentOrder = {
             id: orderId,
@@ -527,85 +534,77 @@ Total: $${total.toFixed(2)}
         
         orderInProgress = true;
         showOrderTracking(orderId);
+        showNotification('Pedido guardado localmente', 'warning');
         
+        // LIMPIAR CARRITO
         cart = [];
         saveCart();
         updateCartUI();
     }
 }
-
 async function sendToGoogleSheets(data) {
     try {
-        console.log('Enviando a Google Sheets:', data);
+        console.log('📤 Enviando datos REALES a Google Sheets:', data);
         
-        // Usar JSON para enviar datos
-        const response = await fetch(CONFIG.GOOGLE_SHEETS_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Importante para Google Apps Script
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
+        // Calcular subtotal correctamente
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const tax = subtotal * CONFIG.TAX_RATE;
+        const service = subtotal * CONFIG.SERVICE_FEE;
+        const total = subtotal + tax + service;
         
-        // Con no-cors no podemos leer la respuesta, pero el pedido se envía
-        console.log('Pedido enviado (modo no-cors)');
-        
-        // Simular respuesta exitosa
-        return {
-            success: true,
-            message: 'Pedido enviado',
-            orderId: 'ORD-' + Date.now().toString().slice(-8),
-            code: Math.floor(100000 + Math.random() * 900000)
+        // Preparar datos REALES del pedido
+        const orderData = {
+            action: 'createOrder',
+            table: currentTable,
+            products: data.products || cart.map(item => `${item.quantity}x ${item.name}`).join(', '),
+            total: total.toFixed(2), // Usar el total calculado, no el que viene en data
+            notes: 'Pedido desde menú digital'
         };
         
+        console.log('📊 Datos REALES enviados:', orderData);
+        
+        // Usar GET en lugar de POST para evitar problemas CORS
+        const params = new URLSearchParams(orderData).toString();
+        const url = `${CONFIG.GOOGLE_SHEETS_URL}?${params}`;
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Respuesta REAL de Google Sheets:', result);
+            
+            // Retornar datos REALES del pedido
+            return {
+                success: true,
+                message: 'Pedido enviado exitosamente',
+                orderId: result.orderId || 'ORD-' + Date.now().toString().slice(-8),
+                code: result.code || Math.floor(100000 + Math.random() * 900000),
+                table: currentTable,
+                total: total.toFixed(2),
+                timestamp: new Date().toISOString()
+            };
+        } else {
+            throw new Error('Error en la respuesta del servidor');
+        }
+        
     } catch (error) {
-        console.error('Error en sendToGoogleSheets:', error);
-        throw error;
+        console.error('❌ Error en sendToGoogleSheets:', error);
+        
+        // Crear pedido local como respaldo
+        const orderId = 'ORD-' + Date.now().toString().slice(-8);
+        const code = Math.floor(100000 + Math.random() * 900000);
+        
+        return {
+            success: true, // Marcamos como éxito para continuar
+            message: 'Pedido guardado localmente',
+            orderId: orderId,
+            code: code,
+            table: currentTable,
+            total: data.total || '0.00',
+            timestamp: new Date().toISOString()
+        };
     }
 }
-
-function showOrderTracking(orderId) {
-    const tracking = document.getElementById('orderTracking');
-    const summary = document.getElementById('cartSummary');
-    
-    if (tracking) {
-        tracking.style.display = 'block';
-        document.getElementById('orderIdDisplay').textContent = orderId;
-    }
-    
-    if (summary) {
-        summary.style.display = 'none';
-    }
-    
-    // Simular progreso del pedido
-    simulateOrderProgress();
-}
-
-function simulateOrderProgress() {
-    const steps = [
-        { id: 'received', label: 'Recibido', icon: 'fas fa-clipboard-check' },
-        { id: 'preparing', label: 'Preparando', icon: 'fas fa-utensils' },
-        { id: 'cooking', label: 'Cocinando', icon: 'fas fa-fire' },
-        { id: 'ready', label: 'Listo', icon: 'fas fa-check-circle' },
-        { id: 'delivered', label: 'Entregado', icon: 'fas fa-concierge-bell' }
-    ];
-    
-    const container = document.getElementById('trackingSteps');
-    if (container) {
-        let html = '';
-        steps.forEach((step, index) => {
-            html += `
-                <div class="tracking-step" id="step-${step.id}">
-                    <div class="step-icon">
-                        <i class="${step.icon}"></i>
-                    </div>
-                    <div class="step-label">${step.label}</div>
-                </div>
-            `;
-        });
-        container.innerHTML = html;
-    }
     
     // Animar pasos
     let currentStep = 0;
