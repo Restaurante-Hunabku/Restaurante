@@ -6,7 +6,7 @@
 // CONFIGURACIÓN DEL SISTEMA
 // ============================================
 const CONFIG = {
-    GOOGLE_SHEETS_URL: 'https://script.google.com/macros/s/AKfycbw7ksv3FiG9KkojMJU1LE-GUEXIJsDAqzaX0QCTM67srSi_uPE5bXx_gMfVpJYYbKw-/exec?action=test',
+    GOOGLE_SHEETS_URL: 'https://script.google.com/macros/s/AKfycbw7ksv3FiG9KkojMJU1LE-GUEXIJsDAqzaX0QCTM67srSi_uPE5bXx_gMfVpJYYbKw-/exec',
     RESTAURANT_NAME: 'Restaurante Deluxe',
     TAX_RATE: 0.16,
     SERVICE_FEE: 0.10,
