@@ -231,6 +231,7 @@ function updateOrderStatus(data) {
         const todaySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.TODAY);
         
         let updated = false;
+        let tableNumber = '';
         
         // Actualizar en hoja de hoy
         if (todaySheet) {
@@ -238,6 +239,7 @@ function updateOrderStatus(data) {
             for (let i = 1; i < todayData.length; i++) {
                 if (todayData[i][0] === orderId) {
                     todaySheet.getRange(i + 1, 5).setValue(status);
+                    tableNumber = todayData[i][1]; // Obtener número de mesa
                     updated = true;
                     
                     // Si se entrega, quitar de hoy
@@ -255,12 +257,14 @@ function updateOrderStatus(data) {
             for (let i = 1; i < ordersData.length; i++) {
                 if (ordersData[i][0] === orderId) {
                     ordersSheet.getRange(i + 1, 5).setValue(status);
+                    if (!tableNumber) tableNumber = ordersData[i][1];
                     updated = true;
                     
                     // Actualizar mesa si se entrega
                     if (status === CONFIG.ORDER_STATUS.DELIVERED) {
-                        const table = ordersData[i][1];
-                        updateTableStatus(table, "available");
+                        updateTableStatus(tableNumber, "available");
+                    } else if (status === CONFIG.ORDER_STATUS.READY) {
+                        updateTableStatus(tableNumber, "occupied", orderId);
                     }
                     break;
                 }
@@ -273,7 +277,11 @@ function updateOrderStatus(data) {
         
         return { 
             success: true, 
-            message: `Estado actualizado a: ${status}` 
+            message: `Estado actualizado a: ${status}`,
+            orderId: orderId,
+            status: status,
+            table: tableNumber,
+            timestamp: new Date().toISOString()
         };
         
     } catch (error) {
