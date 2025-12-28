@@ -151,7 +151,7 @@ async function loadActiveOrders() {
 
 async function loadTablesStatus() {
     try {
-        console.log('Cargando estado de mesas...');
+        console.log('Cargando estado REAL de mesas...');
         
         const url = `${PANEL_CONFIG.GOOGLE_SHEETS_URL}?action=getTablesStatus&_=${Date.now()}`;
         const response = await fetch(url);
@@ -174,13 +174,18 @@ async function loadTablesStatus() {
     } catch (error) {
         console.error('Error cargando mesas:', error);
         
-        // Datos de ejemplo si falla la conexión
+        // Datos REALES basados en pedidos activos
         tables = [];
         for (let i = 1; i <= PANEL_CONFIG.MAX_TABLES; i++) {
+            const tableNum = i.toString().padStart(2, '0');
+            
+            // Buscar si hay pedidos activos en esta mesa
+            const orderInTable = activeOrders.find(o => o.Mesa === tableNum);
+            
             tables.push({
-                Mesa: i.toString().padStart(2, '0'),
-                Estado: i <= 4 ? 'occupied' : 'available',
-                "Orden ID": i <= 4 ? 'ORD-' + (100000 + i) : '',
+                Mesa: tableNum,
+                Estado: orderInTable ? 'occupied' : 'available',
+                "Orden ID": orderInTable ? orderInTable.ID : '',
                 Capacidad: 4,
                 Ubicación: i <= 8 ? 'Sala Principal' : 'Terraza',
                 "Última Actualización": new Date().toISOString()
@@ -192,7 +197,6 @@ async function loadTablesStatus() {
         return false;
     }
 }
-
 // ============================================
 // FUNCIONES DE INTERFAZ
 // ============================================
@@ -661,11 +665,14 @@ function updateOrdersBadge() {
 function updateTablesBadge() {
     const badge = document.getElementById('tablesBadge');
     if (badge) {
+        // Contar mesas ocupadas REALES
         const occupied = tables.filter(t => t.Estado === 'occupied').length;
         badge.textContent = `${occupied}/${PANEL_CONFIG.MAX_TABLES}`;
+        
+        // Actualizar también el badge de pedidos
+        updateOrdersBadge();
     }
 }
-
 function filterOrders(filter) {
     const rows = document.querySelectorAll('#ordersTableBody tr');
     
